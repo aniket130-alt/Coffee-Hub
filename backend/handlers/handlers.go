@@ -326,6 +326,38 @@ func GetOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, orders)
 }
 
+func UpdateOrder(c *gin.Context) {
+	id := c.Param("id")
+	var order models.Order
+	if err := config.DB.First(&order, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+		return
+	}
+
+	var input struct {
+		Status string `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if input.Status != "" {
+		order.Status = input.Status
+	}
+	config.DB.Save(&order)
+	c.JSON(http.StatusOK, order)
+}
+
+func DeleteOrder(c *gin.Context) {
+	id := c.Param("id")
+	if err := config.DB.Delete(&models.Order{}, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete order"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Order deleted"})
+}
+
 // --- File Upload Handler ---
 
 func UploadFile(c *gin.Context) {

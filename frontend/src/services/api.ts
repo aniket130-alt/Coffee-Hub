@@ -5,7 +5,8 @@ import {
   Product,
   GalleryItem,
   BlogPost,
-  ContactMessage
+  ContactMessage,
+  Order
 } from '../types';
 
 const API_BASE = '/api';
@@ -200,9 +201,32 @@ export const api = {
   },
 
   // Orders
-  async getOrders(): Promise<any[]> {
+  async createOrder(order: Partial<Order>): Promise<Order> {
+    const res = await fetch(`${API_BASE}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order),
+    });
+    return handleResponse<Order>(res);
+  },
+
+  async getOrders(): Promise<Order[]> {
     const res = await fetch(`${API_BASE}/orders`);
-    return handleResponse<any[]>(res);
+    return handleResponse<Order[]>(res);
+  },
+
+  async updateOrder(id: number, data: { status: string }): Promise<Order> {
+    const res = await fetch(`${API_BASE}/orders/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<Order>(res);
+  },
+
+  async deleteOrder(id: number): Promise<void> {
+    const res = await fetch(`${API_BASE}/orders/${id}`, { method: 'DELETE' });
+    return handleResponse<void>(res);
   },
 
   // Image File Upload

@@ -17,7 +17,8 @@ import {
   CheckCircle,
   Copy,
   ArrowLeft,
-  LogOut
+  LogOut,
+  ShoppingBag
 } from 'lucide-react';
 import {
   SiteSettings,
@@ -26,7 +27,8 @@ import {
   Product,
   GalleryItem,
   BlogPost,
-  ContactMessage
+  ContactMessage,
+  Order
 } from '../types';
 import { api } from '../services/api';
 
@@ -44,7 +46,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onRefreshData,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'branding' | 'about' | 'contact' | 'menu' | 'products' | 'categories' | 'gallery' | 'blogs' | 'messages' | 'uploader'
+    'branding' | 'about' | 'contact' | 'menu' | 'products' | 'categories' | 'gallery' | 'blogs' | 'orders' | 'messages' | 'uploader'
   >('branding');
 
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   // Modals state
   const [menuModal, setMenuModal] = useState<{ open: boolean; item?: MenuItem }>({ open: false });
@@ -102,7 +105,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [s, c, m, p, g, b, msgs] = await Promise.all([
+      const [s, c, m, p, g, b, msgs, ords] = await Promise.all([
         api.getSettings().catch(() => settings),
         api.getCategories().catch(() => []),
         api.getMenuItems().catch(() => []),
@@ -110,6 +113,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         api.getGallery().catch(() => []),
         api.getBlogs().catch(() => []),
         api.getContacts().catch(() => []),
+        api.getOrders().catch(() => []),
       ]);
       setSettings(s);
       setCategories(c);
@@ -118,6 +122,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setGallery(g);
       setBlogs(b);
       setMessages(msgs);
+      setOrders(ords);
     } catch (err: any) {
       console.error(err);
     } finally {
@@ -260,6 +265,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <BookOpen size={18} />
             <span>Blog Posts ({blogs.length})</span>
+          </div>
+
+          <div
+            className={`admin-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            <ShoppingBag size={18} />
+            <span>Customer Orders ({orders.length})</span>
           </div>
 
           <div
@@ -1169,6 +1182,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* TAB: CUSTOMER ORDERS */}
+          {activeTab === 'orders' && (
+            <div className="admin-panel-card">
+              <div className="admin-panel-title">
+                <span>Customer Orders ({orders.length})</span>
+              </div>
+
+              {orders.length === 0 ? (
+                <p style={{ color: '#888' }}>No customer orders placed yet.</p>
+              ) : (
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Customer Name</th>
+                      <th>Phone</th>
+                      <th>Address</th>
+                      <th>Order Items</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((ord) => {
+                      let parsedItems: any[] = [];
+                      try {
+                        parsedItems = JSON.parse(ord.itemsJson || '[]');
+                      } catch {
+                        parsedItems = [];
+                      }
+                      return (
+                        <tr key={ord.id}>
+                          <td style={{ fontSize: '12px', color: '#777', whiteSpace: 'nowrap' }}>
+                            {ord.createdAt ? new Date(ord.createdAt).toLocaleDateString() : '-'}
+                            <br />
+                            {ord.createdAt ? new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </td>
+                          <td><strong>{ord.customerName}</strong></td>
+                          <td>{ord.phone || '-'}</td>
+                          <td style={{ maxWidth: '200px' }}>{ord.address || 'In-store / None'}</td>
+                          <td style={{ maxWidth: '250px' }}>
+                            <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px' }}>
+                              {parsedItems.map((pi: any, idx: number) => (
+                                <li key={idx}>
+                                  {pi.quantity}x {pi.name} (${pi.price * pi.quantity})
+                                </li>
+                              ))}
+                            </ul>
+                          </td>
+                          <td style={{ color: '#b2744c', fontWeight: 'bold' }}>
+                            ${ord.totalAmount}
+                          </td>
+                          <td>
+                            <span
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: '12px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                backgroundColor: '#dcfce7',
+                                color: '#166534',
+                              }}
+                            >
+                              {ord.status || 'Pending'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}

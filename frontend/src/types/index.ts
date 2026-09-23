@@ -95,3 +95,17 @@ export interface CartItem {
   imageUrl: string;
   quantity: number;
 }
+
+export interface Order {
+  id?: number;
+  customerName: string;
+  email?: string;
+  phone: string;
+  orderType?: 'Pickup' | 'Delivery' | string;
+  address?: string;
+  totalAmount: number;
+  itemsJson: string;
+  status?: string;
+  createdAt?: string;
+}
+

@@ -12,5 +12,5 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot
 
 Write-Host "`n[SUCCESS] Services launched!" -ForegroundColor Green
 Write-Host "Customer Storefront : http://localhost:5173" -ForegroundColor Yellow
-Write-Host "Master Admin Panel  : http://localhost:5173 (Click 'Admin' in top navbar)" -ForegroundColor Yellow
+Write-Host "Master Admin Panel  : http://localhost:5173/admin (Login: admin / admin123)" -ForegroundColor Yellow
 Write-Host "Golang REST API     : http://localhost:8080/api/settings" -ForegroundColor Yellow

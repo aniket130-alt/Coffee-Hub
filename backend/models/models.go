@@ -115,6 +115,7 @@ type Order struct {
 	CustomerName string    `json:"customerName"`
 	Email        string    `json:"email"`
 	Phone        string    `json:"phone"`
+	OrderType    string    `json:"orderType"` // "Pickup" or "Delivery"
 	Address      string    `json:"address"`
 	TotalAmount  float64   `json:"totalAmount"`
 	ItemsJSON    string    `json:"itemsJson"` // serialized list of items

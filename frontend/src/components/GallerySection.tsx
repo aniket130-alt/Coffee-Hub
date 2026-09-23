@@ -10,7 +10,7 @@ export const GallerySection: React.FC<GallerySectionProps> = ({ items }) => {
   const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null);
 
   return (
-    <section className="gallery-section" id="gallary">
+    <section className="gallery-section" id="gallery">
       <div className="gallery-container">
         <h2 className="section-title">
           Our <span>Gallery</span>

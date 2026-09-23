@@ -225,21 +225,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
             </button>
           </form>
 
-          {/* Helper Credentials Box */}
-          <div
-            style={{
-              marginTop: '22px',
-              padding: '12px',
-              backgroundColor: '#fffaf5',
-              border: '1px dashed #b2744c',
-              borderRadius: '8px',
-              textAlign: 'center',
-              fontSize: '12px',
-              color: '#8c5634',
-            }}
-          >
-            <strong>Default Credentials:</strong> username <code>admin</code> &bull; password <code>admin123</code>
-          </div>
 
           {/* Return link */}
           <div style={{ textAlign: 'center', marginTop: '20px' }}>

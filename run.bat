@@ -15,5 +15,5 @@ start "Coffee Shop Frontend" cmd /k "cd frontend && npm run dev"
 echo.
 echo Application is running!
 echo Storefront: http://localhost:5173/
-echo Admin Page: http://localhost:5173/ (Click 'Admin' in top navbar)
+echo Admin Page: http://localhost:5173/admin (Login: admin / admin123)
 echo ========================================================

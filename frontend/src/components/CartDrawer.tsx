@@ -23,6 +23,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onNotify,
 }) => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [orderType, setOrderType] = useState<'Pickup' | 'Delivery'>('Pickup');
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -36,24 +37,38 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !phone) {
-      alert('Please fill in your name and phone number.');
+    if (!customerName.trim()) {
+      alert('Please enter your full name.');
+      return;
+    }
+
+    if (!/^\d{10}$/.test(phone)) {
+      alert('Please enter a valid 10-digit phone number (numbers only).');
+      return;
+    }
+
+    if (orderType === 'Delivery' && !address.trim()) {
+      alert('Please enter your delivery address.');
       return;
     }
 
     try {
       await api.createOrder({
-        customerName,
+        customerName: customerName.trim(),
         email: '',
-        phone,
-        address,
+        phone: phone.trim(),
+        orderType,
+        address: address.trim() || (orderType === 'Pickup' ? 'Store Pickup' : ''),
         totalAmount,
         itemsJson: JSON.stringify(cartItems),
       });
 
-      onNotify('🎉 Order placed successfully! Our barista is preparing it.');
+      onNotify(`🎉 ${orderType} order placed successfully! Check Admin dashboard for review.`);
       onClearCart();
       setIsCheckingOut(false);
+      setCustomerName('');
+      setPhone('');
+      setAddress('');
       onClose();
     } catch (err: any) {
       alert('Failed to place order: ' + err.message);
