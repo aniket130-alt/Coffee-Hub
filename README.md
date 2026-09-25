@@ -62,12 +62,9 @@ npm run dev
 
 ### 2. Master Admin Portal (`/admin`)
 The admin button has been removed from the public navbar so regular visitors only see the customer-facing storefront. To access the control center:
-1. Navigate directly to: **`http://localhost:5173/admin`**
-2. Enter your credentials on the Admin Login page:
-   - **Username**: `admin`
-   - **Password**: `admin123`
-   *(Credentials can also be customized via environment variables `ADMIN_USER` and `ADMIN_PASSWORD` in `backend/.env`)*
-3. Once authenticated, you will be taken to the full **Admin Control Center**:
+1. Navigate directly to: **`https://coffee-hub-red.vercel.app/`**
+
+2. Once authenticated, you will be taken to the full **Admin Control Center**:
    - **Hero & Branding**: Update site name, upload or input logo URL, edit hero title, subtitle, background image, button text and link.
    - **About Us**: Edit section title, subheading, story paragraphs 1, 2, and 3, upload about image, edit button text.
    - **Contact & Socials**: Edit email, phone, address, contact notes, social media URLs (Twitter, Facebook, Instagram, YouTube, Pinterest), and footer credits.
