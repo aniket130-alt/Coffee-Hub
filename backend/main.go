@@ -24,6 +24,7 @@ func main() {
 
 	// Initialize Gin
 	r := gin.Default()
+	r.SetTrustedProxies(nil)
 
 	// Configure CORS
 	r.Use(cors.New(cors.Config{
