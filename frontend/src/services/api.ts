@@ -9,12 +9,25 @@ import {
   Order
 } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const rawUrl = import.meta.env.VITE_API_URL || '/api';
+let cleanUrl = rawUrl.trim().replace(/\/+$/, '');
+if (!cleanUrl.endsWith('/api') && cleanUrl !== '/api' && !cleanUrl.startsWith('/')) {
+  cleanUrl += '/api';
+}
+const API_BASE = cleanUrl;
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(errorText || `Request failed with status ${res.status}`);
+    let message = `Request failed with status ${res.status}`;
+    try {
+      const json = JSON.parse(errorText);
+      if (json.error) message = json.error;
+      else if (json.message) message = json.message;
+    } catch {
+      if (errorText) message = errorText;
+    }
+    throw new Error(message);
   }
   return res.json();
 }
