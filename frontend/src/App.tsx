@@ -10,6 +10,7 @@ import { ContactSection } from './components/ContactSection';
 import { BlogSection } from './components/BlogSection';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
+import { UserAuthModal } from './components/UserAuthModal';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminLogin } from './pages/AdminLogin';
 import {
@@ -19,7 +20,8 @@ import {
   Product,
   GalleryItem,
   BlogPost,
-  CartItem
+  CartItem,
+  User
 } from './types';
 import { api } from './services/api';
 import './style.css';
@@ -37,6 +39,17 @@ export const App: React.FC = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() =>
     Boolean(sessionStorage.getItem('admin_token'))
   );
+
+  // Customer User Auth State
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem('coffeeshop_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -237,6 +250,8 @@ export const App: React.FC = () => {
             settings={settings}
             cartCount={totalCartCount}
             onOpenCart={() => setIsCartOpen(true)}
+            currentUser={currentUser}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
           />
@@ -271,9 +286,32 @@ export const App: React.FC = () => {
             isOpen={isCartOpen}
             onClose={() => setIsCartOpen(false)}
             cartItems={cartItems}
+            currentUser={currentUser}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
             onClearCart={() => setCartItems([])}
+            onNotify={notify}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+          />
+
+          <UserAuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            currentUser={currentUser}
+            onUserLogin={(user, token) => {
+              setCurrentUser(user);
+              localStorage.setItem('coffeeshop_user', JSON.stringify(user));
+              localStorage.setItem('coffeeshop_user_token', token);
+            }}
+            onUserLogout={() => {
+              setCurrentUser(null);
+              localStorage.removeItem('coffeeshop_user');
+              localStorage.removeItem('coffeeshop_user_token');
+            }}
+            onUpdateUser={(updatedUser) => {
+              setCurrentUser(updatedUser);
+              localStorage.setItem('coffeeshop_user', JSON.stringify(updatedUser));
+            }}
             onNotify={notify}
           />
         </>
