@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Search, Menu as MenuIcon, X } from 'lucide-react';
-import { SiteSettings } from '../types';
+import { ShoppingCart, Search, Menu as MenuIcon, X, User as UserIcon } from 'lucide-react';
+import { SiteSettings, User } from '../types';
 
 interface NavbarProps {
   settings: SiteSettings;
   cartCount: number;
   onOpenCart: () => void;
+  currentUser: User | null;
+  onOpenAuth: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
 }
@@ -14,22 +16,34 @@ export const Navbar: React.FC<NavbarProps> = ({
   settings,
   cartCount,
   onOpenCart,
+  currentUser,
+  onOpenAuth,
   searchQuery,
   onSearchChange,
 }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <nav className="main-navbar" id="navbar">
       <div className="navbar-container">
-        {/* Softcoded Brand Logo */}
-        <a href="#home" className="navbar-logo">
+        {/* Softcoded Brand Logo - Fixed smooth scroll without hash section collapse */}
+        <div
+          onClick={handleLogoClick}
+          className="navbar-logo"
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          title="Return to top"
+        >
           {settings.logoUrl ? (
             <img src={settings.logoUrl} alt={settings.siteName || "Coffee Shop"} />
           ) : (
             <span>☕ {settings.siteName || "Coffee Shop"}</span>
           )}
-        </a>
+        </div>
 
         {/* Navigation Links */}
         <ul className="nav-links">
@@ -43,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <a href="/#blogs" className="nav-link">Blogs</a>
         </ul>
 
-        {/* Right Actions: Search & Cart */}
+        {/* Right Actions: Search, User Account, & Cart */}
         <div className="navbar-actions">
           <div className="search-box">
             <Search size={16} color="#666" />
@@ -54,6 +68,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               onChange={(e) => onSearchChange(e.target.value)}
             />
           </div>
+
+          <button
+            className="cart-btn"
+            onClick={onOpenAuth}
+            title={currentUser ? "My Account" : "User Login / Register"}
+            style={{ backgroundColor: currentUser ? '#b2744c' : '#222' }}
+          >
+            <UserIcon size={18} />
+            <span>{currentUser ? currentUser.name.split(' ')[0] : 'Login'}</span>
+          </button>
 
           <button className="cart-btn" onClick={onOpenCart} title="View Cart">
             <ShoppingCart size={18} />
