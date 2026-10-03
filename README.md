@@ -1,93 +1,111 @@
-# ☕ Full-Stack Softcoded Coffee Shop Platform
+# ☕ Full-Stack Coffee Shop & Delivery Platform
 
-A modern, responsive, and completely **softcoded** Coffee Shop web application built with **React (TypeScript)**, **Golang (Gin)**, and **PostgreSQL (GORM)**.
+A modern, high-performance, and completely  Coffee Shop application built with **React (TypeScript)**, **Golang (Gin framework)**, and **GORM (SQLite / PostgreSQL)**.
 
-Every single visual, structural, and textual element on the customer storefront is dynamic and manageable from a centralized **Admin Control Center** (`/admin`), including logos, hero banners, story sections, categories, menu items, prices, ratings, packaged products, gallery photos, blogs, contact information, social links, customer inquiries, and media uploads.
+---
+
+## 🚀 Recent Feature Updates & Enhancements
+
+1. **Customer User Registration & Authentication**:
+   - Secure customer signup and login system (`/api/user/register`, `/api/user/login`).
+   - Passwords securely hashed with `bcrypt`.
+   - Customer profile state maintained with session token storage.
+
+2. **Order Purpose Selection (Delivery vs. Dine-in vs. Pickup)**:
+   - Customers can select their order purpose directly in checkout:
+     - 🛵 **Delivery**: Requires street address + pincode with saved address auto-fill.
+     - 🍽️ **Dine-in (Table Service)**: Requires Table Number selection & store hub choice.
+     - 🛍️ **Pickup**: Store takeaway option.
+
+3. **Saved Address Management (3+ Addresses)**:
+   - Registered users can save, manage, and label multiple addresses (*Home*, *Office*, *Other*) with 1-click selection during checkout.
+
+4. **Nearby Coffee Hub Finder**:
+   - Automated hub detection matching pincodes and regional areas to the nearest Coffee Hub branch (*South Delhi Hub*, *Connaught Place Flagship*, *Cyber Hub Gurgaon*, *Noida Sec 18 Hub*).
+
+5. **Fixed Logo Click & Smooth Scrolling**:
+   - Removed hash anchor behavior on the brand logo to prevent section collapse or jumpy layouts on navigation. Clicking the logo now performs a smooth scroll to top.
+
+6. **Admin Dashboard Loading Gap & Order Tracking Fixes**:
+   - Eliminated visual layout collapse / data gap upon visiting or refreshing `/admin`.
+   - Enhanced **Customer Orders** tab with live status updating (`Pending`, `Preparing`, `Completed`, `Cancelled`), order purpose badges, hub location names, table numbers, and automatic background polling.
+
+---
+
+## 🛠️ Tech Stack & Architecture
+
+- **Frontend**: React 18, TypeScript, Vite, Lucide Icons, Custom CSS3 with responsive layouts.
+- **Backend**: Golang 1.26, Gin Web Framework, GORM ORM, `golang.org/x/crypto/bcrypt`.
+- **Database**: Dual-engine support (Auto-falls back to embedded SQLite `coffeeshop.db` or connects to PostgreSQL via `DATABASE_URL`).
 
 ---
 
 ## 🚀 Quick Start Guide
 
-### Prerequisites
-- **Golang** (v1.20+)
-- **Node.js** (v18+) & **npm**
-- *(Optional)* **PostgreSQL** (If PostgreSQL is not running locally, the backend automatically uses an embedded persistent storage `coffeeshop.db` so the app runs out of the box with zero configuration!)
-
----
-
-### 1. Start the Golang Backend Server
+### 1. Run Golang Backend
 ```powershell
 cd backend
-
-# If using PostgreSQL, create a database named 'coffeeshop' or configure .env:
-# DATABASE_URL=postgres://postgres:postgres@localhost:5432/coffeeshop?sslmode=disable
-
-# Run the backend
 go run main.go
 ```
-> The API server will start on `http://localhost:8080` with auto-migration and automatic seeding.
+*Backend runs on `http://localhost:8080` with auto-migration and initial seed data.*
 
----
-
-### 2. Start the React + TypeScript Frontend
+### 2. Run React Frontend
 ```powershell
 cd frontend
-
-# Install dependencies (already installed)
-npm install
-
-# Start Vite dev server
 npm run dev
 ```
-> Open your browser at: **`http://localhost:5173`**
+*Frontend runs on `http://localhost:5173`.*
 
 ---
 
-## 🛠️ Features & Architecture
+## 📑 API Endpoint References
 
-### 1. Customer Storefront
-- **Navbar**: Dynamic logo, navigation links, live real-time search bar, interactive shopping cart badge, and direct "Admin" toggle.
-- **Hero Section**: Softcoded headline, subtitle, action button, and high-resolution background image with warm coffee overlay.
-- **About Section**: Softcoded headline, subheading, multi-paragraph story, roastery image, and CTA.
-- **Top Categories**: Card tiles with hover lift effects and category routing.
-- **Menu Section**: Softcoded items with star ratings, current price, strike-through discount price, category filtering, and "Add to Cart".
-- **Products Section**: Packaged coffee beans with promotional badges and cart integration.
-- **Gallery Section**: Photo grid with an interactive lightbox viewer.
-- **Contact Us**: Softcoded contact information (phone, email, physical address) and an interactive inquiry form that persists customer messages into the database.
-- **Latest Blogs**: Article cards with preview snippets and a "Read More" article modal.
-- **Footer**: Dynamic social links (Twitter/X, Facebook, Instagram, YouTube, Pinterest), credit links, and copyright text.
-- **Cart Slide-out Drawer**: Real-time quantity adjustment, item removal, price calculation, and checkout simulation.
+### Customer Authentication & User Profile
+- `POST /api/user/register` - Create customer account (Name, Email, Password, Phone)
+- `POST /api/user/login` - Authenticate customer & return user session token
+- `GET /api/user/profile?userId=:id` - Retrieve user profile details
+- `PUT /api/user/addresses` - Update user's saved address list (JSON array)
 
----
+### Coffee Hubs & Location
+- `GET /api/hubs` - List all active store hub locations
+- `POST /api/hubs/nearby` - Find nearest hub by pincode/city/address
 
-### 2. Master Admin Portal (`/admin`)
-The admin button has been removed from the public navbar so regular visitors only see the customer-facing storefront. To access the control center:
-1. Navigate directly to: **`http://localhost:5173/admin`**
-2. Enter your credentials on the Admin Login page:
-   - **Username**: `admin`
-   - **Password**: `admin123`
-   *(Credentials can also be customized via environment variables `ADMIN_USER` and `ADMIN_PASSWORD` in `backend/.env`)*
-3. Once authenticated, you will be taken to the full **Admin Control Center**:
-   - **Hero & Branding**: Update site name, upload or input logo URL, edit hero title, subtitle, background image, button text and link.
-   - **About Us**: Edit section title, subheading, story paragraphs 1, 2, and 3, upload about image, edit button text.
-   - **Contact & Socials**: Edit email, phone, address, contact notes, social media URLs (Twitter, Facebook, Instagram, YouTube, Pinterest), and footer credits.
-   - **Menu Items Manager**: Full CRUD (Create, Read, Update, Delete) for coffee menu items. Change prices, original strike prices, star ratings, categories, availability, and upload photos.
-   - **Packaged Products Manager**: Full CRUD for bagged coffee beans, promotional badges ("Bestseller", "Top Pick"), prices, and stock flags.
-   - **Categories Manager**: Add, edit, reorder, or delete category cards.
-   - **Gallery Manager**: Add, delete, and manage photo gallery images.
-   - **Blog Articles Manager**: Write, edit, and publish new blog posts with authors, dates, summaries, and full articles.
-   - **Inquiries Inbox**: View customer messages submitted through the contact form with timestamps.
-   - **Universal Fast Media Uploader**: Drag & drop or upload any image file directly to the Golang backend (`/uploads`), with instant 1-click URL copying.
-   - **Logout**: Secure one-click logout in the top header.
+### Orders
+- `POST /api/orders` - Submit new cart order (Delivery/Dine-in/Pickup, items, hub, address/table)
+- `GET /api/orders` - List customer orders (Admin)
+- `PUT /api/orders/:id` - Update order status (Pending -> Preparing -> Completed)
+- `DELETE /api/orders/:id` - Delete order record
+
+### Admin Authentication
+- `POST /api/admin/login` - Authenticate admin (`admin` / `admin123`)
 
 ---
 
-## 🗄️ Database & PostgreSQL Configuration
+## 👤 Admin Portal Access (`/admin`)
 
-The backend connects using GORM. To use PostgreSQL:
-1. Create a PostgreSQL database (e.g., `coffeeshop`).
-2. Set the `DATABASE_URL` in `backend/.env` or as an environment variable:
-   ```env
-   DATABASE_URL=postgres://username:password@localhost:5432/coffeeshop?sslmode=disable
-   ```
-3. Restart the backend server. All tables will automatically migrate and seed!
+- **URL**: `http://localhost:5173/admin`
+- **Default Username**: `admin`
+- **Default Password**: `admin123`
+
+---
+
+## 📜 Project Structure
+
+```
+task/
+├── backend/
+│   ├── config/          # Database setup (db.go) & initial data seeding
+│   ├── handlers/        # Gin API handlers (user auth, hubs, orders, settings)
+│   ├── models/          # GORM structs (User, Hub, Order, MenuItem, Product, etc.)
+│   ├── main.go          # Entry point & route definitions
+│   └── coffeeshop.db    # Embedded persistent SQLite database
+├── frontend/
+│   ├── src/
+│   │   ├── components/  # Navbar, CartDrawer, UserAuthModal, Hero, Menu, etc.
+│   │   ├── pages/       # AdminDashboard, AdminLogin
+│   │   ├── services/    # api.ts (Fetch API client)
+│   │   ├── types/       # TypeScript interfaces (User, Hub, Order, etc.)
+│   │   ├── App.tsx      # Main application router & state manager
+│   │   └── style.css    # Central styling stylesheet
+└── README.md
+```
