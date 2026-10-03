@@ -6,7 +6,10 @@ import {
   GalleryItem,
   BlogPost,
   ContactMessage,
-  Order
+  Order,
+  User,
+  Hub,
+  SavedAddress
 } from '../types';
 
 const rawUrl = import.meta.env.VITE_API_URL || '/api';
@@ -261,5 +264,81 @@ export const api = {
       body: JSON.stringify({ username, password }),
     });
     return handleResponse<{ success: boolean; token: string; message: string }>(res);
+  },
+
+  // Customer User Auth
+  async userRegister(data: { name: string; email: string; password: string; phone?: string }): Promise<{ success: boolean; token: string; user: User; message: string }> {
+    const res = await fetch(`${API_BASE}/user/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<{ success: boolean; token: string; user: User; message: string }>(res);
+  },
+
+  async userLogin(data: { email: string; password: string }): Promise<{ success: boolean; token: string; user: User; message: string }> {
+    const res = await fetch(`${API_BASE}/user/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<{ success: boolean; token: string; user: User; message: string }>(res);
+  },
+
+  async getUserProfile(userId: number): Promise<User> {
+    const res = await fetch(`${API_BASE}/user/profile?userId=${userId}`);
+    return handleResponse<User>(res);
+  },
+
+  async updateUserAddresses(userId: number, addresses: SavedAddress[]): Promise<{ success: boolean; user: User; message: string }> {
+    const res = await fetch(`${API_BASE}/user/addresses`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, addressesJson: JSON.stringify(addresses) }),
+    });
+    return handleResponse<{ success: boolean; user: User; message: string }>(res);
+  },
+
+  // Coffee Hubs & Nearby Finder
+  async getHubs(): Promise<Hub[]> {
+    const res = await fetch(`${API_BASE}/hubs`);
+    return handleResponse<Hub[]>(res);
+  },
+
+  async getAllHubs(): Promise<Hub[]> {
+    const res = await fetch(`${API_BASE}/hubs/all`);
+    return handleResponse<Hub[]>(res);
+  },
+
+  async createHub(hub: Partial<Hub>): Promise<Hub> {
+    const res = await fetch(`${API_BASE}/hubs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(hub),
+    });
+    return handleResponse<Hub>(res);
+  },
+
+  async updateHub(id: number, hub: Partial<Hub>): Promise<Hub> {
+    const res = await fetch(`${API_BASE}/hubs/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(hub),
+    });
+    return handleResponse<Hub>(res);
+  },
+
+  async deleteHub(id: number): Promise<void> {
+    const res = await fetch(`${API_BASE}/hubs/${id}`, { method: 'DELETE' });
+    return handleResponse<void>(res);
+  },
+
+  async findNearbyHub(data: { pincode?: string; city?: string; address?: string }): Promise<{ found: boolean; hub?: Hub; distanceKm?: number; message: string }> {
+    const res = await fetch(`${API_BASE}/hubs/nearby`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<{ found: boolean; hub?: Hub; distanceKm?: number; message: string }>(res);
   }
 };

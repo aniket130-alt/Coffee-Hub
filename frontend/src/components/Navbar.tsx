@@ -49,6 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <ul className="nav-links">
           <a href="/#home" className="nav-link">Home</a>
           <a href="/#about" className="nav-link">About</a>
+          <a href="/#stores" className="nav-link">Stores</a>
           <a href="/#categories" className="nav-link">Categories</a>
           <a href="/#menu" className="nav-link">Menu</a>
           <a href="/#product" className="nav-link">Products</a>

@@ -86,6 +86,37 @@ export interface ContactMessage {
   createdAt: string;
 }
 
+export interface SavedAddress {
+  id: string;
+  title: string; // e.g. "Home", "Office", "Gym"
+  fullAddress: string;
+  city: string;
+  pincode: string;
+  isDefault?: boolean;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  addressesJson?: string;
+  addresses?: SavedAddress[];
+  createdAt?: string;
+}
+
+export interface Hub {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  pincode: string;
+  phone: string;
+  imageUrl?: string;
+  hours?: string;
+  isActive: boolean;
+}
+
 export interface CartItem {
   id: string; // e.g. "menu-1" or "prod-2"
   originalId: number;
@@ -98,11 +129,14 @@ export interface CartItem {
 
 export interface Order {
   id?: number;
+  userId?: number;
   customerName: string;
   email?: string;
   phone: string;
-  orderType?: 'Pickup' | 'Delivery' | string;
+  orderType?: 'Pickup' | 'Delivery' | 'Dine-in' | string;
+  tableNo?: string;
   address?: string;
+  hubName?: string;
   totalAmount: number;
   itemsJson: string;
   status?: string;
