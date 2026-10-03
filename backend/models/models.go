@@ -98,6 +98,32 @@ type BlogPost struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+// User represents customer accounts
+type User struct {
+	ID            uint      `gorm:"primaryKey" json:"id"`
+	Name          string    `json:"name"`
+	Email         string    `gorm:"uniqueIndex" json:"email"`
+	Password      string    `json:"-"` // Omit password in JSON responses
+	Phone         string    `json:"phone"`
+	AddressesJSON string    `json:"addressesJson"` // Serialized JSON array of saved addresses
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+}
+
+// Hub represents coffee store branches / hubs
+type Hub struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Name      string    `json:"name"`
+	Address   string    `json:"address"`
+	City      string    `json:"city"`
+	Pincode   string    `json:"pincode"`
+	Phone     string    `json:"phone"`
+	ImageURL  string    `json:"imageUrl"`
+	Hours     string    `json:"hours"`
+	IsActive  bool      `json:"isActive"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
 // ContactMessage records inquiries submitted through the contact form
 type ContactMessage struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
@@ -112,13 +138,16 @@ type ContactMessage struct {
 // Order represents customer cart orders
 type Order struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
+	UserID       *uint     `json:"userId"`
 	CustomerName string    `json:"customerName"`
 	Email        string    `json:"email"`
 	Phone        string    `json:"phone"`
-	OrderType    string    `json:"orderType"` // "Pickup" or "Delivery"
+	OrderType    string    `json:"orderType"` // "Delivery", "Dine-in", or "Pickup"
+	TableNo      string    `json:"tableNo"`   // Applicable when OrderType is "Dine-in"
 	Address      string    `json:"address"`
+	HubName      string    `json:"hubName"`   // Nearest or selected coffee hub
 	TotalAmount  float64   `json:"totalAmount"`
 	ItemsJSON    string    `json:"itemsJson"` // serialized list of items
-	Status       string    `json:"status"`    // "Pending", "Completed", "Cancelled"
+	Status       string    `json:"status"`    // "Pending", "Preparing", "Completed", "Cancelled"
 	CreatedAt    time.Time `json:"createdAt"`
 }

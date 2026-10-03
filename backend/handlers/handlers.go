@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"coffeeshop-backend/models"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // --- Site Settings Handlers ---
@@ -430,5 +432,253 @@ func AdminLogin(c *gin.Context) {
 		"success": false,
 		"error":   "Invalid username or password",
 	})
+}
+
+// --- Customer Authentication & User Handlers ---
+
+type UserRegisterReq struct {
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	Phone    string `json:"phone"`
+}
+
+func UserRegister(c *gin.Context) {
+	var req UserRegisterReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Please provide all required registration fields"})
+		return
+	}
+
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+	var existing models.User
+	if err := config.DB.Where("email = ?", req.Email).First(&existing).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "An account with this email address already exists"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to secure password"})
+		return
+	}
+
+	user := models.User{
+		Name:          req.Name,
+		Email:         req.Email,
+		Password:      string(hashedPassword),
+		Phone:         req.Phone,
+		AddressesJSON: "[]",
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	if err := config.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user account"})
+		return
+	}
+
+	token := fmt.Sprintf("user_token_%d_%d", user.ID, time.Now().Unix())
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"token":   token,
+		"user":    user,
+		"message": "Account created successfully!",
+	})
+}
+
+type UserLoginReq struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+func UserLogin(c *gin.Context) {
+	var req UserLoginReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email and password are required"})
+		return
+	}
+
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+	var user models.User
+	if err := config.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	token := fmt.Sprintf("user_token_%d_%d", user.ID, time.Now().Unix())
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"token":   token,
+		"user":    user,
+		"message": "Welcome back!",
+	})
+}
+
+func GetUserProfile(c *gin.Context) {
+	userIdStr := c.Query("userId")
+	if userIdStr == "" {
+		userIdStr = c.Param("id")
+	}
+	id, err := strconv.Atoi(userIdStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID"})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User profile not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+type UpdateAddressesReq struct {
+	UserID        uint   `json:"userId" binding:"required"`
+	AddressesJSON string `json:"addressesJson" binding:"required"`
+}
+
+func UpdateUserAddresses(c *gin.Context) {
+	var req UpdateAddressesReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid address payload"})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.First(&user, req.UserID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	user.AddressesJSON = req.AddressesJSON
+	user.UpdatedAt = time.Now()
+	config.DB.Save(&user)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"user":    user,
+		"message": "Saved addresses updated successfully",
+	})
+}
+
+// --- Coffee Hub Handlers ---
+
+func GetHubs(c *gin.Context) {
+	var hubs []models.Hub
+	config.DB.Where("is_active = ?", true).Order("id asc").Find(&hubs)
+	c.JSON(http.StatusOK, hubs)
+}
+
+func GetAllHubs(c *gin.Context) {
+	var hubs []models.Hub
+	config.DB.Order("id asc").Find(&hubs)
+	c.JSON(http.StatusOK, hubs)
+}
+
+func CreateHub(c *gin.Context) {
+	var hub models.Hub
+	if err := c.ShouldBindJSON(&hub); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	hub.CreatedAt = time.Now()
+	config.DB.Create(&hub)
+	c.JSON(http.StatusCreated, hub)
+}
+
+func UpdateHub(c *gin.Context) {
+	id := c.Param("id")
+	var hub models.Hub
+	if err := config.DB.First(&hub, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Store hub not found"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&hub); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	config.DB.Save(&hub)
+	c.JSON(http.StatusOK, hub)
+}
+
+func DeleteHub(c *gin.Context) {
+	id := c.Param("id")
+	if err := config.DB.Delete(&models.Hub{}, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete store hub"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Store hub deleted successfully"})
+}
+
+type NearbyHubReq struct {
+	Pincode string `json:"pincode"`
+	City    string `json:"city"`
+	Address string `json:"address"`
+}
+
+func FindNearbyHub(c *gin.Context) {
+	var req NearbyHubReq
+	c.ShouldBindJSON(&req)
+
+	var hubs []models.Hub
+	config.DB.Where("is_active = ?", true).Find(&hubs)
+
+	if len(hubs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"found": false, "message": "No active coffee hubs available"})
+		return
+	}
+
+	reqPincode := strings.TrimSpace(req.Pincode)
+	reqCity := strings.ToLower(strings.TrimSpace(req.City))
+	reqAddr := strings.ToLower(strings.TrimSpace(req.Address))
+
+	// Match pincode exact or prefix match
+	for _, h := range hubs {
+		if reqPincode != "" && (h.Pincode == reqPincode || strings.HasPrefix(h.Pincode, reqPincode[:min(3, len(reqPincode))])) {
+			c.JSON(http.StatusOK, gin.H{"found": true, "hub": h, "distanceKm": 1.5, "message": "Matched nearest hub by location pincode"})
+			return
+		}
+	}
+
+	// Match city name in address
+	for _, h := range hubs {
+		if reqCity != "" && strings.Contains(strings.ToLower(h.City), reqCity) {
+			c.JSON(http.StatusOK, gin.H{"found": true, "hub": h, "distanceKm": 2.8, "message": "Matched nearest hub in your city"})
+			return
+		}
+	}
+
+	// Search address keyword match
+	for _, h := range hubs {
+		if reqAddr != "" && (strings.Contains(reqAddr, strings.ToLower(h.Name)) || strings.Contains(reqAddr, strings.ToLower(h.City))) {
+			c.JSON(http.StatusOK, gin.H{"found": true, "hub": h, "distanceKm": 3.2, "message": "Matched closest regional hub"})
+			return
+		}
+	}
+
+	// Fallback to first hub as primary hub
+	c.JSON(http.StatusOK, gin.H{
+		"found":      true,
+		"hub":        hubs[0],
+		"distanceKm": 4.1,
+		"message":    "Assigned primary Coffee Hub serving your area",
+	})
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 

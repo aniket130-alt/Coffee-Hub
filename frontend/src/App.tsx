@@ -11,6 +11,7 @@ import { BlogSection } from './components/BlogSection';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { UserAuthModal } from './components/UserAuthModal';
+import { StoresSection } from './components/StoresSection';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminLogin } from './pages/AdminLogin';
 import {
@@ -21,7 +22,8 @@ import {
   GalleryItem,
   BlogPost,
   CartItem,
-  User
+  User,
+  Hub
 } from './types';
 import { api } from './services/api';
 import './style.css';
@@ -90,6 +92,7 @@ export const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
+  const [hubs, setHubs] = useState<Hub[]>([]);
 
   // Cart State with localStorage persistence
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
@@ -131,13 +134,14 @@ export const App: React.FC = () => {
   // Load backend data
   const fetchData = async () => {
     try {
-      const [s, c, m, p, g, b] = await Promise.all([
+      const [s, c, m, p, g, b, hList] = await Promise.all([
         api.getSettings().catch(() => null),
         api.getCategories().catch(() => []),
         api.getMenuItems().catch(() => []),
         api.getProducts().catch(() => []),
         api.getGallery().catch(() => []),
         api.getBlogs().catch(() => []),
+        api.getHubs().catch(() => []),
       ]);
       if (s) setSettings(s);
       if (c) setCategories(c);
@@ -145,6 +149,7 @@ export const App: React.FC = () => {
       if (p) setProducts(p);
       if (g) setGallery(g);
       if (b) setBlogs(b);
+      if (hList) setHubs(hList);
     } catch (e) {
       console.error('Error loading data', e);
     }
@@ -259,6 +264,11 @@ export const App: React.FC = () => {
           <Hero settings={settings} />
 
           <About settings={settings} />
+
+          <StoresSection
+            hubs={hubs}
+            onSelectStoreToOrder={() => setIsCartOpen(true)}
+          />
 
           {categories.length > 0 && <Categories categories={categories} />}
 

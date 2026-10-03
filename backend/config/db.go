@@ -78,6 +78,8 @@ func InitDB() *gorm.DB {
 		&models.BlogPost{},
 		&models.ContactMessage{},
 		&models.Order{},
+		&models.User{},
+		&models.Hub{},
 	)
 	if err != nil {
 		log.Fatalf("[DB] Migration failed: %v", err)
@@ -325,5 +327,21 @@ func SeedData() {
 		}
 
 		log.Println("[DB] Initial softcoded content seeded successfully.")
+	}
+
+	var hubCount int64
+	DB.Model(&models.Hub{}).Count(&hubCount)
+	if hubCount == 0 {
+		log.Println("[DB] Seeding default Coffee Hub locations...")
+		hubs := []models.Hub{
+			{Name: "South Delhi Central Hub", Address: "Shahpur Jat, Hauz Khas", City: "Delhi", Pincode: "110049", Phone: "+91 98100 11223", ImageURL: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&auto=format&fit=crop&q=80", Hours: "8:00 AM - 11:00 PM", IsActive: true},
+			{Name: "Connaught Place Flagship Hub", Address: "Inner Circle, Block B, CP", City: "Delhi", Pincode: "110001", Phone: "+91 98100 22334", ImageURL: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80", Hours: "7:30 AM - 11:30 PM", IsActive: true},
+			{Name: "Gurugram Cyber Hub Branch", Address: "DLF Cyber City, Phase 2", City: "Gurugram", Pincode: "122002", Phone: "+91 98100 33445", ImageURL: "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=600&auto=format&fit=crop&q=80", Hours: "8:00 AM - 10:30 PM", IsActive: true},
+			{Name: "Noida Sector 18 Express Hub", Address: "Wave Silver Tower, Sec 18", City: "Noida", Pincode: "201301", Phone: "+91 98100 44556", ImageURL: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80", Hours: "8:30 AM - 10:00 PM", IsActive: true},
+		}
+		for _, h := range hubs {
+			DB.Create(&h)
+		}
+		log.Println("[DB] Coffee Hub locations seeded successfully.")
 	}
 }
