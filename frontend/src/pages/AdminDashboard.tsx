@@ -18,7 +18,9 @@ import {
   Copy,
   ArrowLeft,
   LogOut,
-  ShoppingBag
+  ShoppingBag,
+  Store,
+  MapPin
 } from 'lucide-react';
 import {
   SiteSettings,
@@ -28,7 +30,8 @@ import {
   GalleryItem,
   BlogPost,
   ContactMessage,
-  Order
+  Order,
+  Hub
 } from '../types';
 import { api } from '../services/api';
 
@@ -46,7 +49,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onRefreshData,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'branding' | 'about' | 'contact' | 'menu' | 'products' | 'categories' | 'gallery' | 'blogs' | 'orders' | 'messages' | 'uploader'
+    'branding' | 'about' | 'contact' | 'menu' | 'products' | 'categories' | 'gallery' | 'blogs' | 'orders' | 'hubs' | 'messages' | 'uploader'
   >('branding');
 
   const [loading, setLoading] = useState(true);
@@ -89,6 +92,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [hubs, setHubs] = useState<Hub[]>([]);
 
   // Modals state
   const [menuModal, setMenuModal] = useState<{ open: boolean; item?: MenuItem }>({ open: false });
@@ -96,6 +100,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [categoryModal, setCategoryModal] = useState<{ open: boolean; item?: Category }>({ open: false });
   const [galleryModal, setGalleryModal] = useState<{ open: boolean; item?: GalleryItem }>({ open: false });
   const [blogModal, setBlogModal] = useState<{ open: boolean; item?: BlogPost }>({ open: false });
+  const [hubModal, setHubModal] = useState<{ open: boolean; item?: Hub }>({ open: false });
 
   // Uploader State
   const [uploadResultUrl, setUploadResultUrl] = useState('');
@@ -105,7 +110,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [s, c, m, p, g, b, msgs, ords] = await Promise.all([
+      const [s, c, m, p, g, b, msgs, ords, hList] = await Promise.all([
         api.getSettings().catch(() => settings),
         api.getCategories().catch(() => []),
         api.getMenuItems().catch(() => []),
@@ -114,6 +119,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         api.getBlogs().catch(() => []),
         api.getContacts().catch(() => []),
         api.getOrders().catch(() => []),
+        api.getAllHubs().catch(() => []),
       ]);
       setSettings(s);
       setCategories(c);
@@ -123,6 +129,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setBlogs(b);
       setMessages(msgs);
       setOrders(ords);
+      setHubs(hList);
     } catch (err: any) {
       console.error(err);
     } finally {
@@ -133,6 +140,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     loadAll();
   }, []);
+
+  // Poll for new orders periodically when on orders tab
+  useEffect(() => {
+    let interval: any;
+    if (activeTab === 'orders') {
+      interval = setInterval(() => {
+        api.getOrders().then(setOrders).catch(() => {});
+      }, 5000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTab]);
 
   // Save Settings
   const handleSaveSettings = async () => {
@@ -162,14 +182,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setUploading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f6f9' }}>
-        <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#b2744c' }}>Loading Admin Control Center...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="admin-view">
@@ -273,6 +285,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <ShoppingBag size={18} />
             <span>Customer Orders ({orders.length})</span>
+          </div>
+
+          <div
+            className={`admin-nav-item ${activeTab === 'hubs' ? 'active' : ''}`}
+            onClick={() => setActiveTab('hubs')}
+          >
+            <Store size={18} />
+            <span>Store Hubs ({hubs.length})</span>
           </div>
 
           <div
@@ -1193,6 +1213,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="admin-panel-card">
               <div className="admin-panel-title">
                 <span>Customer Orders ({orders.length})</span>
+                <button
+                  className="admin-save-btn"
+                  onClick={async () => {
+                    const fresh = await api.getOrders();
+                    setOrders(fresh);
+                    onNotify('Refreshed orders list');
+                  }}
+                >
+                  Refresh Orders
+                </button>
               </div>
 
               {orders.length === 0 ? (
@@ -1203,8 +1233,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <tr>
                       <th>Date</th>
                       <th>Customer Name</th>
-                      <th>Phone</th>
-                      <th>Address</th>
+                      <th>Type</th>
+                      <th>Hub Branch</th>
+                      <th>Address / Table #</th>
                       <th>Order Items</th>
                       <th>Total</th>
                       <th>Status</th>
@@ -1218,6 +1249,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       } catch {
                         parsedItems = [];
                       }
+                      const isDineIn = ord.orderType === 'Dine-in';
+                      const isDelivery = ord.orderType === 'Delivery';
+
                       return (
                         <tr key={ord.id}>
                           <td style={{ fontSize: '12px', color: '#777', whiteSpace: 'nowrap' }}>
@@ -1225,9 +1259,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <br />
                             {ord.createdAt ? new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                           </td>
-                          <td><strong>{ord.customerName}</strong></td>
-                          <td>{ord.phone || '-'}</td>
-                          <td style={{ maxWidth: '200px' }}>{ord.address || 'In-store / None'}</td>
+                          <td>
+                            <strong>{ord.customerName}</strong>
+                            <div style={{ fontSize: '12px', color: '#666' }}>{ord.phone}</div>
+                            {ord.email && <div style={{ fontSize: '11px', color: '#888' }}>{ord.email}</div>}
+                          </td>
+                          <td>
+                            <span
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: '12px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                backgroundColor: isDineIn ? '#e0f2fe' : isDelivery ? '#fef3c7' : '#f3e8ff',
+                                color: isDineIn ? '#0369a1' : isDelivery ? '#b45309' : '#6b21a8',
+                              }}
+                            >
+                              {ord.orderType || 'Delivery'}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#333' }}>
+                              📍 {ord.hubName || 'Primary Hub'}
+                            </span>
+                          </td>
+                          <td style={{ maxWidth: '200px', fontSize: '13px' }}>
+                            {ord.address || (ord.tableNo ? `Table #${ord.tableNo}` : '-')}
+                          </td>
                           <td style={{ maxWidth: '250px' }}>
                             <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '13px' }}>
                               {parsedItems.map((pi: any, idx: number) => (
@@ -1241,18 +1299,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             ${ord.totalAmount}
                           </td>
                           <td>
-                            <span
+                            <select
+                              value={ord.status || 'Pending'}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value;
+                                if (ord.id) {
+                                  const updated = await api.updateOrder(ord.id, { status: newStatus });
+                                  setOrders(orders.map((o) => (o.id === ord.id ? updated : o)));
+                                  onNotify(`Order #${ord.id} status updated to ${newStatus}`);
+                                }
+                              }}
                               style={{
-                                padding: '3px 8px',
-                                borderRadius: '12px',
-                                fontSize: '11px',
-                                fontWeight: 'bold',
-                                backgroundColor: '#dcfce7',
-                                color: '#166534',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                border: '1px solid #ccc',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                background: '#fffaf5',
                               }}
                             >
-                              {ord.status || 'Pending'}
-                            </span>
+                              <option value="Pending">Pending</option>
+                              <option value="Preparing">Preparing</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
                           </td>
                         </tr>
                       );
@@ -1260,6 +1330,95 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tbody>
                 </table>
               )}
+            </div>
+          )}
+
+          {/* TAB: STORE HUBS & BRANCHES */}
+          {activeTab === 'hubs' && (
+            <div className="admin-panel-card">
+              <div className="admin-panel-title">
+                <span>Coffee Shop Store Locations ({hubs.length})</span>
+                <button
+                  className="admin-save-btn"
+                  onClick={() => setHubModal({ open: true })}
+                >
+                  <Plus size={16} />
+                  Add Store Hub
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                {hubs.map((h) => (
+                  <div
+                    key={h.id}
+                    style={{
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      backgroundColor: 'white',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <img
+                      src={h.imageUrl || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&auto=format&fit=crop&q=80'}
+                      alt={h.name}
+                      style={{ width: '100%', height: '140px', objectFit: 'cover' }}
+                    />
+                    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <h4 style={{ fontSize: '16px', margin: 0, fontWeight: 700 }}>{h.name}</h4>
+                        <span
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            backgroundColor: h.isActive ? '#dcfce7' : '#fee2e2',
+                            color: h.isActive ? '#166534' : '#991b1b',
+                          }}
+                        >
+                          {h.isActive ? 'Active' : 'Disabled'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#666', margin: '0 0 6px 0' }}>
+                        📍 {h.address}, {h.city} - {h.pincode}
+                      </p>
+                      {h.phone && (
+                        <p style={{ fontSize: '12px', color: '#555', margin: '0 0 4px 0' }}>
+                          📞 {h.phone}
+                        </p>
+                      )}
+                      {h.hours && (
+                        <p style={{ fontSize: '12px', color: '#166534', margin: '0 0 12px 0', fontWeight: 600 }}>
+                          ⏰ {h.hours}
+                        </p>
+                      )}
+                      <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                        <button
+                          className="admin-action-btn action-edit"
+                          onClick={() => setHubModal({ open: true, item: h })}
+                        >
+                          <Edit2 size={12} /> Edit Store
+                        </button>
+                        <button
+                          className="admin-action-btn action-delete"
+                          onClick={async () => {
+                            if (confirm(`Delete store branch "${h.name}"?`)) {
+                              await api.deleteHub(h.id);
+                              setHubs(hubs.filter((item) => item.id !== h.id));
+                              onNotify('Store hub deleted successfully');
+                              onRefreshData();
+                            }
+                          }}
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -1436,6 +1595,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }
             onRefreshData();
             setBlogModal({ open: false });
+          }}
+          onUpload={handleFileUpload}
+        />
+      )}
+
+      {/* STORE HUB MODAL */}
+      {hubModal.open && (
+        <HubModal
+          item={hubModal.item}
+          onClose={() => setHubModal({ open: false })}
+          onSave={async (data) => {
+            if (hubModal.item?.id) {
+              const updated = await api.updateHub(hubModal.item.id, data);
+              setHubs(hubs.map((h) => (h.id === updated.id ? updated : h)));
+              onNotify('Store hub updated successfully');
+            } else {
+              const created = await api.createHub(data);
+              setHubs([...hubs, created]);
+              onNotify('New store hub added successfully');
+            }
+            onRefreshData();
+            setHubModal({ open: false });
           }}
           onUpload={handleFileUpload}
         />
@@ -1833,6 +2014,110 @@ const BlogModal: React.FC<BlogModalProps> = ({ item, onClose, onSave, onUpload }
             onClick={() => onSave({ title, author, date, summary, content, imageUrl })}
           >
             Publish Article
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface HubModalProps {
+  item?: Hub;
+  onClose: () => void;
+  onSave: (data: Partial<Hub>) => Promise<void>;
+  onUpload: (file: File) => Promise<string>;
+}
+
+const HubModal: React.FC<HubModalProps> = ({ item, onClose, onSave, onUpload }) => {
+  const [name, setName] = useState(item?.name || '');
+  const [address, setAddress] = useState(item?.address || '');
+  const [city, setCity] = useState(item?.city || '');
+  const [pincode, setPincode] = useState(item?.pincode || '');
+  const [phone, setPhone] = useState(item?.phone || '');
+  const [hours, setHours] = useState(item?.hours || '8:00 AM - 11:00 PM');
+  const [imageUrl, setImageUrl] = useState(item?.imageUrl || '');
+  const [isActive, setIsActive] = useState(item?.isActive ?? true);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{item ? 'Edit Store Hub / Branch' : 'Add New Store Hub'}</h3>
+        </div>
+        <div className="modal-body">
+          <div className="admin-field">
+            <label>Store / Hub Name *</label>
+            <input type="text" required placeholder="e.g. Connaught Place Flagship Store" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+
+          <div className="admin-field">
+            <label>Street Address *</label>
+            <input type="text" required placeholder="e.g. Inner Circle, Block B, CP" value={address} onChange={(e) => setAddress(e.target.value)} />
+          </div>
+
+          <div className="admin-grid-2">
+            <div className="admin-field">
+              <label>City *</label>
+              <input type="text" required placeholder="e.g. Delhi" value={city} onChange={(e) => setCity(e.target.value)} />
+            </div>
+            <div className="admin-field">
+              <label>Pincode *</label>
+              <input type="text" required placeholder="e.g. 110001" value={pincode} onChange={(e) => setPincode(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="admin-grid-2">
+            <div className="admin-field">
+              <label>Contact Phone Number</label>
+              <input type="text" placeholder="e.g. +91 98100 22334" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div className="admin-field">
+              <label>Opening Hours</label>
+              <input type="text" placeholder="e.g. 8:00 AM - 11:00 PM" value={hours} onChange={(e) => setHours(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="admin-field">
+            <label>Store Front Image URL or Upload</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input type="text" placeholder="https://..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+              <label style={{ background: '#b2744c', color: 'white', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Upload size={14} /> Upload
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={async (e) => {
+                    if (e.target.files?.[0]) {
+                      const url = await onUpload(e.target.files[0]);
+                      if (url) setImageUrl(url);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="admin-field" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="checkbox"
+              id="hubActive"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
+            <label htmlFor="hubActive" style={{ margin: 0, cursor: 'pointer' }}>
+              Active Store (Accepting Orders & Visible to Customers)
+            </label>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="about-btn" style={{ padding: '8px 18px' }} onClick={onClose}>Cancel</button>
+          <button
+            className="admin-save-btn"
+            style={{ padding: '8px 20px' }}
+            onClick={() => onSave({ name, address, city, pincode, phone, hours, imageUrl, isActive })}
+          >
+            Save Store Hub
           </button>
         </div>
       </div>
