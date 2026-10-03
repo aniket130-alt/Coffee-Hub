@@ -90,6 +90,20 @@ func main() {
 		api.PUT("/orders/:id", handlers.UpdateOrder)
 		api.DELETE("/orders/:id", handlers.DeleteOrder)
 
+		// Customer User Auth & Address Management
+		api.POST("/user/register", handlers.UserRegister)
+		api.POST("/user/login", handlers.UserLogin)
+		api.GET("/user/profile", handlers.GetUserProfile)
+		api.PUT("/user/addresses", handlers.UpdateUserAddresses)
+
+		// Coffee Hubs & Nearby Location Finder
+		api.GET("/hubs", handlers.GetHubs)
+		api.GET("/hubs/all", handlers.GetAllHubs)
+		api.POST("/hubs", handlers.CreateHub)
+		api.PUT("/hubs/:id", handlers.UpdateHub)
+		api.DELETE("/hubs/:id", handlers.DeleteHub)
+		api.POST("/hubs/nearby", handlers.FindNearbyHub)
+
 		// File Upload
 		api.POST("/upload", handlers.UploadFile)
 
