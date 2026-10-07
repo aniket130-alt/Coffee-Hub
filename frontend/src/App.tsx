@@ -57,34 +57,50 @@ export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Softcoded Data States
-  const [settings, setSettings] = useState<SiteSettings>({
-    siteName: 'Coffee Shop',
-    logoUrl: '',
-    heroHeading: 'Start Your Day With a\nFresh Coffee',
-    heroSubheading: 'Experience artisanal coffee brewed to perfection from hand-selected beans sourced across the world.',
-    heroImageUrl: '',
-    heroBtnText: 'Shop Now',
-    heroBtnLink: '#menu',
-    aboutHeading: 'About Us',
-    aboutSubheading: 'What Makes Our Coffee Special?',
-    aboutStory1: 'We roast small-batch specialty coffee with meticulous attention to origin, profile, and flavor balance.',
-    aboutStory2: 'From single-origin varieties to rich velvet espresso blends, our brewmasters craft each cup with passionate precision.',
-    aboutStory3: 'Step inside our warm, aromatic cafe or order your favorite beans straight to your door.',
-    aboutImageUrl: '',
-    aboutBtnText: 'Learn More',
-    phone: '+91 00000 00000',
-    email: 'coffeeshop@gmail.com',
-    address: 'Shahpur Jat, Delhi, India',
-    contactNote: 'Visit our roastery cafe for fresh pours, tasting flights, and custom catering inquiries.',
-    socialTwitter: 'https://twitter.com',
-    socialFacebook: 'https://facebook.com',
-    socialInstagram: 'https://instagram.com',
-    socialYoutube: 'https://youtube.com',
-    socialPinterest: 'https://pinterest.com',
-    footerCreditName: 'Aniket',
-    footerCreditLink: '#',
-    copyrightText: '© Copyright Coffee Shop. All Rights Reserved',
+  // Settings state — initialized instantly from localStorage cache to eliminate flash
+  const [settings, setSettings] = useState<SiteSettings>(() => {
+    try {
+      const cached = localStorage.getItem('coffeeshop_settings_cache');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    // No cache yet — use empty strings so images/text don't flash incorrect defaults
+    return {
+      siteName: '',
+      logoUrl: '',
+      heroHeading: '',
+      heroSubheading: '',
+      heroImageUrl: '',
+      heroBtnText: 'Shop Now',
+      heroBtnLink: '#menu',
+      aboutHeading: '',
+      aboutSubheading: '',
+      aboutStory1: '',
+      aboutStory2: '',
+      aboutStory3: '',
+      aboutImageUrl: '',
+      aboutBtnText: 'Learn More',
+      phone: '',
+      email: '',
+      address: '',
+      contactNote: '',
+      socialTwitter: '',
+      socialFacebook: '',
+      socialInstagram: '',
+      socialYoutube: '',
+      socialPinterest: '',
+      footerCreditName: '',
+      footerCreditLink: '#',
+      copyrightText: '',
+    };
+  });
+
+  // True when settings have been loaded from cache or API (suppresses navbar flash)
+  const [settingsLoaded, setSettingsLoaded] = useState<boolean>(() => {
+    try {
+      return Boolean(localStorage.getItem('coffeeshop_settings_cache'));
+    } catch {
+      return false;
+    }
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -131,7 +147,7 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Load backend data
+  // Load backend data and update localStorage cache
   const fetchData = async () => {
     try {
       const [s, c, m, p, g, b, hList] = await Promise.all([
@@ -143,7 +159,14 @@ export const App: React.FC = () => {
         api.getBlogs().catch(() => []),
         api.getHubs().catch(() => []),
       ]);
-      if (s) setSettings(s);
+      if (s) {
+        setSettings(s);
+        setSettingsLoaded(true);
+        localStorage.setItem('coffeeshop_settings_cache', JSON.stringify(s));
+      } else {
+        // Even if settings fetch fails, mark loaded so navbar shows something
+        setSettingsLoaded(true);
+      }
       if (c) setCategories(c);
       if (m) setMenuItems(m);
       if (p) setProducts(p);
@@ -152,6 +175,7 @@ export const App: React.FC = () => {
       if (hList) setHubs(hList);
     } catch (e) {
       console.error('Error loading data', e);
+      setSettingsLoaded(true);
     }
   };
 
@@ -253,6 +277,7 @@ export const App: React.FC = () => {
         <>
           <Navbar
             settings={settings}
+            settingsLoaded={settingsLoaded}
             cartCount={totalCartCount}
             onOpenCart={() => setIsCartOpen(true)}
             currentUser={currentUser}

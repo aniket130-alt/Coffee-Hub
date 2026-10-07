@@ -154,11 +154,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
   }, [activeTab]);
 
+  // Format updatedAt for display
+  const formatLastEdited = (iso?: string): string => {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch {
+      return '';
+    }
+  };
+
   // Save Settings
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
-      await api.updateSettings(settings);
+      const updated = await api.updateSettings(settings);
+      // Reflect the new updatedAt from backend immediately
+      if (updated && updated.updatedAt) {
+        setSettings(prev => ({ ...prev, updatedAt: updated.updatedAt }));
+      }
       onNotify('Site settings saved successfully!');
       onRefreshData();
     } catch (err: any) {
@@ -318,7 +336,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {activeTab === 'branding' && (
             <div className="admin-panel-card">
               <div className="admin-panel-title">
-                <span>Branding & Hero Banner</span>
+                <div>
+                  <span>Branding &amp; Hero Banner</span>
+                  {settings.updatedAt && (
+                    <div style={{ fontSize: '11px', color: '#888', marginTop: '3px' }}>
+                      ✏️ Last edited: {formatLastEdited(settings.updatedAt)}
+                    </div>
+                  )}
+                </div>
                 <button
                   className="admin-save-btn"
                   onClick={handleSaveSettings}
@@ -494,7 +519,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {activeTab === 'about' && (
             <div className="admin-panel-card">
               <div className="admin-panel-title">
-                <span>About Us Section</span>
+                <div>
+                  <span>About Us Section</span>
+                  {settings.updatedAt && (
+                    <div style={{ fontSize: '11px', color: '#888', marginTop: '3px' }}>
+                      ✏️ Last edited: {formatLastEdited(settings.updatedAt)}
+                    </div>
+                  )}
+                </div>
                 <button
                   className="admin-save-btn"
                   onClick={handleSaveSettings}
@@ -622,7 +654,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {activeTab === 'contact' && (
             <div className="admin-panel-card">
               <div className="admin-panel-title">
-                <span>Contact Info & Social Links</span>
+                <div>
+                  <span>Contact Info &amp; Social Links</span>
+                  {settings.updatedAt && (
+                    <div style={{ fontSize: '11px', color: '#888', marginTop: '3px' }}>
+                      ✏️ Last edited: {formatLastEdited(settings.updatedAt)}
+                    </div>
+                  )}
+                </div>
                 <button
                   className="admin-save-btn"
                   onClick={handleSaveSettings}
