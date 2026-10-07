@@ -31,13 +31,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const renderLogo = () => {
-    if (!settingsLoaded) {
-      // Show a subtle skeleton pulse while settings load — no flash of wrong text or image
+    // Show logo image if a URL is configured by admin
+    if (settings.logoUrl) {
+      return (
+        <img
+          src={settings.logoUrl}
+          alt={settings.siteName || 'Coffee Hub'}
+          style={{ height: '42px', width: 'auto', objectFit: 'contain', display: 'block' }}
+        />
+      );
+    }
+
+    // If still loading and no siteName yet, show slim skeleton pulse
+    if (!settingsLoaded && !settings.siteName) {
       return (
         <div
           style={{
-            width: '120px',
-            height: '36px',
+            width: '130px',
+            height: '32px',
             borderRadius: '6px',
             background: 'rgba(255,255,255,0.15)',
             animation: 'navLogoPulse 1.4s ease-in-out infinite',
@@ -45,16 +56,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         />
       );
     }
-    if (settings.logoUrl) {
-      return (
-        <img
-          src={settings.logoUrl}
-          alt={settings.siteName || 'Coffee Shop'}
-          style={{ height: '42px', width: 'auto', objectFit: 'contain', display: 'block' }}
-        />
-      );
-    }
-    return <span>☕ {settings.siteName || 'Coffee Shop'}</span>;
+
+    // Always show text fallback — siteName from admin or hardcoded default
+    return <span>☕ {settings.siteName || 'Coffee Hub'}</span>;
   };
 
   return (
@@ -62,14 +66,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Inline keyframe for logo skeleton pulse */}
       <style>{`
         @keyframes navLogoPulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.85; }
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.7; }
         }
       `}</style>
 
       <nav className="main-navbar" id="navbar">
         <div className="navbar-container">
-          {/* Brand Logo — shows skeleton until settingsLoaded is true */}
+          {/* Brand Logo */}
           <div
             onClick={handleLogoClick}
             className="navbar-logo"

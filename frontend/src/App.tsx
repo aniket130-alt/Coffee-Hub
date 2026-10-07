@@ -61,9 +61,19 @@ export const App: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings>(() => {
     try {
       const cached = localStorage.getItem('coffeeshop_settings_cache');
-      if (cached) return JSON.parse(cached);
-    } catch {}
-    // No cache yet — use empty strings so images/text don't flash incorrect defaults
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Guard: if the cache has empty siteName it was saved in a bad state — discard it
+        if (parsed && parsed.siteName && parsed.siteName.length > 0) {
+          return parsed;
+        }
+        // Bad cache — clear it so we fetch fresh from backend
+        localStorage.removeItem('coffeeshop_settings_cache');
+      }
+    } catch {
+      localStorage.removeItem('coffeeshop_settings_cache');
+    }
+    // No valid cache — use empty strings (never hardcoded wrong images)
     return {
       siteName: '',
       logoUrl: '',
@@ -94,10 +104,13 @@ export const App: React.FC = () => {
     };
   });
 
-  // True when settings have been loaded from cache or API (suppresses navbar flash)
+  // True when settings have been loaded from a valid cache or API
   const [settingsLoaded, setSettingsLoaded] = useState<boolean>(() => {
     try {
-      return Boolean(localStorage.getItem('coffeeshop_settings_cache'));
+      const cached = localStorage.getItem('coffeeshop_settings_cache');
+      if (!cached) return false;
+      const parsed = JSON.parse(cached);
+      return Boolean(parsed && parsed.siteName && parsed.siteName.length > 0);
     } catch {
       return false;
     }
