@@ -37,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <img
           src={settings.logoUrl}
           alt={settings.siteName || 'Coffee Hub'}
-          style={{ height: '42px', width: 'auto', objectFit: 'contain', display: 'block' }}
+          style={{ height: '50px', width: 'auto', objectFit: 'contain', display: 'block' }}
         />
       );
     }
